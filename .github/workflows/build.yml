@@ -1,3 +1,4 @@
+
 name: Java CI with Gradle
 
 on:
@@ -15,35 +16,48 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # Сначала временно ставим Java 17, чтобы просто сгенерировать файлы старого Gradle
+    # Автоматически находим, в какой папке лежит build.gradle, и переходим в неё
+    - name: Find Project Root Directory
+      id: locate
+      run: |
+        DIR=$(find . -name "build.gradle" -exec dirname {} \; | head -n 1)
+        if [ -z "$DIR" ]; then
+          echo "build.gradle не найден в репозитории!"
+          exit 1
+        fi
+        echo "project_dir=$DIR" >> $GITHUB_OUTPUT
+        echo "Проект найден в папке: $DIR"
+
     - name: Set up JDK 17 for Gradle Wrapper generation
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    # Генерируем Gradle 4.4.1 (он отлично работает с модами 1.12.2)
     - name: Generate Gradle 4.4.1 Wrapper
+      working-directory: ${{ steps.locate.outputs.project_dir }}
       run: gradle wrapper --gradle-version 4.4.1
 
-    # Переключаемся обратно на Java 8, которая строго нужна для компиляции самого мода
+    # Возвращаем Java 8 для сборки самого мода Minecraft
     - name: Change to JDK 8 for Minecraft Mod Compilation
       uses: actions/setup-java@v4
       with:
         java-version: '8'
         distribution: 'temurin'
 
-    # Делаем скрипт запуска исполняемым
+    # Делаем скрипт запуска исполняемым в нужной папке
     - name: Make gradlew executable
+      working-directory: ${{ steps.locate.outputs.project_dir }}
       run: chmod +x gradlew
 
-    # Запускаем сборку мода
+    # Запускаем сборку из папки проекта
     - name: Build with Gradle
+      working-directory: ${{ steps.locate.outputs.project_dir }}
       run: ./gradlew build
 
-    # Сохраняем готовый .jar файл
+    # Сохраняем готовый .jar файл мода из папки сборки
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
         name: TrainClimb-Mod
-        path: build/libs/*.jar
+        path: ${{ steps.locate.outputs.project_dir }}/build/libs/*.jar
