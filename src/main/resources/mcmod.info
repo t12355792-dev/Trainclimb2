@@ -1,0 +1,12 @@
+[
+{
+  "modid": "trainclimb",
+  "name": "Train Climb",
+  "description": "Модификация добавляет спидометр и перчатки сцепления для поездов.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "authorList": ["ExampleAuthor"],
+  "credits": "Создано с помощью Forge",
+  "logoFile": "logo.png"
+}
+]
